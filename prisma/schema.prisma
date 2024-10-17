@@ -12,3 +12,192 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id       String @id @default(uuid()) @db.Uuid
+  email    String @unique
+  password String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profile         UserProfile?
+  adresses        UserAddress[]
+  orders          Order[]
+  refreshSessions UserRefreshSession[]
+
+  @@map("users")
+}
+
+model Admin {
+  id       String @id @default(uuid()) @db.Uuid
+  email    String @unique
+  password String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admins")
+}
+
+model UserProfile {
+  userId      String @id @map("user_id") @db.Uuid
+  firstName   String @map("first_name")
+  phoneNumber String @map("phone_number")
+  lastName    String @map("last_name")
+  avatarUrl   String @map("avatar_url")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_profiles")
+}
+
+model UserAddress {
+  userId    String  @map("user_id") @db.Uuid
+  addressId String  @map("address_id") @db.Uuid
+  user      User    @relation(fields: [userId], references: [id])
+  address   Address @relation(fields: [addressId], references: [id])
+
+  @@id([userId, addressId])
+  @@map("user_address")
+}
+
+model Address {
+  id       String @id @default(uuid()) @db.Uuid
+  address1 String @map("address_1")
+  address2 String @map("address_2")
+  city     String
+  state    String
+  zip      String
+  country  String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users  UserAddress[]
+  orders Order[]
+
+  @@map("addresses")
+}
+
+model Repairman {
+  id       String @id @default(uuid()) @db.Uuid
+  email    String @unique
+  password String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profile         RepairmanProfile?
+  orders          Order[]
+  refreshSessions RepairmanRefreshSession[]
+
+  @@map("repairmans")
+}
+
+model RepairmanProfile {
+  repairmanId String @id @map("repairman_id") @db.Uuid
+  firstName   String @map("first_name")
+  phoneNumber String @map("phone_number")
+  lastName    String @map("last_name")
+  avatarUrl   String @map("avatar_url")
+
+  repairman Repairman @relation(fields: [repairmanId], references: [id])
+
+  @@map("repairman_profiles")
+}
+
+model Service {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  isAvailable Boolean @default(true) @map("is_available")
+  imageUrl    String  @map("image_url")
+  price       Float
+
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+  orders    OrderService[]
+
+  @@map("services")
+}
+
+model OrderService {
+  orderId   String @map("order_id") @db.Uuid
+  serviceId String @map("service_id") @db.Uuid
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@id([orderId, serviceId])
+  @@map("order_services")
+}
+
+model Order {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @map("user_id") @db.Uuid
+  repairmanId String?     @map("repairman_id") @db.Uuid
+  addressId   String      @map("address_id") @db.Uuid
+  paymentType PaymentType @default(CASH) @map("payment_type")
+  status      OrderStatus @default(PENDING)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User           @relation(fields: [userId], references: [id])
+  repairman Repairman?     @relation(fields: [repairmanId], references: [id])
+  address   Address        @relation(fields: [addressId], references: [id])
+  services  OrderService[]
+
+  @@map("orders")
+}
+
+model UserRefreshSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  token       String   @unique
+  expired     DateTime
+  fingerprint String
+  ip          String
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("user_refresh_sessions")
+}
+
+model RepairmanRefreshSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  repairmanId String   @map("repairman_id") @db.Uuid
+  token       String   @unique
+  expired     DateTime
+  fingerprint String
+  ip          String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  repairman Repairman @relation(fields: [repairmanId], references: [id])
+
+  @@map("repairman_refresh_sessions")
+}
+
+enum UserRole {
+  USER
+  REPAIRMAN
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  CANCELED
+  DECLINED
+  FINISHED
+}
+
+enum PaymentType {
+  CASH
+  CARD
+}
