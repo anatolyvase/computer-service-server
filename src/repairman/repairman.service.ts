@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from 'src/database/database.service';
-import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 import { CreateRepairmanDto } from './dto/create-repairman.dto';
 import { UpdateRepairmanDto } from './dto/update-repairman.dto';
 import { Prisma } from '@prisma/client';

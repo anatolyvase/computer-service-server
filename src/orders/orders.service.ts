@@ -40,8 +40,52 @@ export class OrdersService {
     services: true,
   };
 
-  async create(createOrderDto: CreateOrderDto) {
-    return 'This action adds a new order';
+  async create(createOrderDto: CreateOrderDto, userId: string) {
+    const address = await this.db.address.findUnique({
+      where: { id: createOrderDto.addressId },
+    });
+
+    if (!address) {
+      throw new NotFoundException('Address not found');
+    }
+
+    const services = await this.servicesService.findMany(
+      createOrderDto.services,
+    );
+
+    if (services.length !== createOrderDto.services.length) {
+      throw new NotFoundException('Service not found');
+    }
+
+    if (services.some((service) => !service.isAvailable)) {
+      throw new ConflictException('Service is not available');
+    }
+
+    const order = await this.db.order.create({
+      data: {
+        address: {
+          connect: {
+            id: address.id,
+          },
+        },
+        user: {
+          connect: {
+            id: userId,
+          },
+        },
+        status: OrderStatus.PENDING,
+      },
+      include: this.include,
+    });
+
+    await this.db.orderService.createMany({
+      data: services.map((service) => ({
+        serviceId: service.id,
+        orderId: order.id,
+      })),
+    });
+
+    return order;
   }
 
   async findAll() {
@@ -65,15 +109,15 @@ export class OrdersService {
     return order;
   }
 
-  async update(id: string, updateOrderDto: UpdateOrderDto) {
+  async update(id: string, updateOrderDto: UpdateOrderDto, userId) {
     await this.findOne(id);
     let services: Service[] | undefined = undefined;
     if (updateOrderDto.repairmanId) {
       await this.repairmanService.findOne(updateOrderDto.repairmanId);
     }
 
-    if (updateOrderDto.userId) {
-      await this.usersService.findOne(updateOrderDto.userId);
+    if (userId) {
+      await this.usersService.findOne(userId);
     }
 
     if (updateOrderDto.services) {

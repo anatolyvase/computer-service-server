@@ -5,8 +5,6 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from 'src/database/database.service';
-import { CreateRepairmanDto } from 'src/repairman/dto/create-repairman.dto';
-import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 

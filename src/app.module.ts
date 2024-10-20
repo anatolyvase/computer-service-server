@@ -6,9 +6,10 @@ import { AdminsModule } from './admins/admins.module';
 import { RepairmanModule } from './repairman/repairman.module';
 import { ServicesModule } from './services/services.module';
 import { OrdersModule } from './orders/orders.module';
+import { BasketModule } from './basket/basket.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, DatabaseModule, AdminsModule, RepairmanModule, ServicesModule, OrdersModule],
+  imports: [UsersModule, AuthModule, DatabaseModule, AdminsModule, RepairmanModule, ServicesModule, OrdersModule, BasketModule],
   controllers: [],
   providers: [],
 })

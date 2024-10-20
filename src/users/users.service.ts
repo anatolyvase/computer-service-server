@@ -1,12 +1,14 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from 'src/database/database.service';
+import { UpdateAccountPasswordDto } from 'src/users/dto/update-user-account.dto';
+import { UpdateUserProfileDto } from 'src/users/dto/update-user-profile.dto';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { Prisma } from '@prisma/client';
 
 type Include = Prisma.UserInclude;
@@ -20,6 +22,7 @@ export class UsersService {
       select: {
         firstName: true,
         lastName: true,
+        phoneNumber: true,
         avatarUrl: true,
       },
     },
@@ -40,7 +43,7 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    return this.db.user.create({
+    const user = await this.db.user.create({
       data: {
         email,
         password: hashedPassword,
@@ -52,6 +55,14 @@ export class UsersService {
         },
       },
     });
+
+    await this.db.basket.create({
+      data: {
+        userId: user.id,
+      },
+    });
+
+    return user;
   }
 
   async findAll() {
@@ -90,22 +101,56 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    await this.findOne(id);
+  async changePassword(
+    updateUserDto: UpdateAccountPasswordDto,
+    senderId: string,
+  ) {
+    const user = await this.findOne(senderId);
+
+    const isMatch = await bcrypt.compare(updateUserDto.password, user.password);
+
+    if (!isMatch) {
+      throw new ConflictException('Invalid password');
+    }
+
+    const hashedPassword = await bcrypt.hash(updateUserDto.newPassword, 10);
 
     return this.db.user.update({
       where: {
-        id,
+        id: user.id,
       },
       data: {
-        ...updateUserDto,
+        password: hashedPassword,
       },
       include: this.include,
     });
   }
 
-  async remove(id: string) {
+  async updateProfile(
+    updateUserProfileDto: UpdateUserProfileDto,
+    senderId: string,
+  ) {
+    const user = await this.findOne(senderId);
+
+    return this.db.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        profile: {
+          update: updateUserProfileDto,
+        },
+      },
+      include: this.include,
+    });
+  }
+
+  async remove(id: string, senderId: string) {
     await this.findOne(id);
+
+    if (id !== senderId) {
+      throw new ForbiddenException('You are not allowed to delete this user');
+    }
 
     return this.db.user.delete({
       where: {

@@ -24,8 +24,8 @@ export class OrdersController {
 
   @Roles(Role.USER)
   @Post()
-  create(@Body() createOrderDto: CreateOrderDto) {
-    return this.ordersService.create(createOrderDto);
+  create(@Body() createOrderDto: CreateOrderDto, @CurrentUser() user: any) {
+    return this.ordersService.create(createOrderDto, user.id);
   }
 
   @Roles(Role.REPAIRMAN, Role.ADMIN)
@@ -45,8 +45,9 @@ export class OrdersController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateOrderDto: UpdateOrderDto,
+    @CurrentUser() user: any,
   ) {
-    return this.ordersService.update(id, updateOrderDto);
+    return this.ordersService.update(id, updateOrderDto, user.id);
   }
 
   @Roles(Role.ADMIN)

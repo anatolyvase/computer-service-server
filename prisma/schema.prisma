@@ -25,6 +25,7 @@ model User {
   adresses        UserAddress[]
   orders          Order[]
   refreshSessions UserRefreshSession[]
+  basket          Basket?
 
   @@map("users")
 }
@@ -47,7 +48,7 @@ model UserProfile {
   lastName    String @map("last_name")
   avatarUrl   String @map("avatar_url")
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
 }
@@ -55,8 +56,8 @@ model UserProfile {
 model UserAddress {
   userId    String  @map("user_id") @db.Uuid
   addressId String  @map("address_id") @db.Uuid
-  user      User    @relation(fields: [userId], references: [id])
-  address   Address @relation(fields: [addressId], references: [id])
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
 
   @@id([userId, addressId])
   @@map("user_address")
@@ -102,7 +103,7 @@ model RepairmanProfile {
   lastName    String @map("last_name")
   avatarUrl   String @map("avatar_url")
 
-  repairman Repairman @relation(fields: [repairmanId], references: [id])
+  repairman Repairman @relation(fields: [repairmanId], references: [id], onDelete: Cascade)
 
   @@map("repairman_profiles")
 }
@@ -115,19 +116,47 @@ model Service {
   imageUrl    String  @map("image_url")
   price       Float
 
-  createdAt DateTime       @default(now()) @map("created_at")
-  updatedAt DateTime       @updatedAt @map("updated_at")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
   orders    OrderService[]
+  baskets   BasketService[]
 
   @@map("services")
+}
+
+model Basket {
+  id        String          @id @default(uuid()) @db.Uuid
+  userId    String          @unique @map("user_id") @db.Uuid
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  services  BasketService[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("baskets")
+}
+
+model BasketService {
+  basketId  String @map("basket_id") @db.Uuid
+  serviceId String @map("service_id") @db.Uuid
+  count     Int    @default(1)
+
+  basket  Basket  @relation(fields: [basketId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([basketId, serviceId])
 }
 
 model OrderService {
   orderId   String @map("order_id") @db.Uuid
   serviceId String @map("service_id") @db.Uuid
+  count     Int    @default(1)
 
-  order   Order   @relation(fields: [orderId], references: [id])
-  service Service @relation(fields: [serviceId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@id([orderId, serviceId])
   @@map("order_services")
@@ -144,9 +173,9 @@ model Order {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user      User           @relation(fields: [userId], references: [id])
-  repairman Repairman?     @relation(fields: [repairmanId], references: [id])
-  address   Address        @relation(fields: [addressId], references: [id])
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repairman Repairman?     @relation(fields: [repairmanId], references: [id], onDelete: Cascade)
+  address   Address        @relation(fields: [addressId], references: [id], onDelete: Cascade)
   services  OrderService[]
 
   @@map("orders")
@@ -160,7 +189,7 @@ model UserRefreshSession {
   fingerprint String
   ip          String
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -177,7 +206,7 @@ model RepairmanRefreshSession {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  repairman Repairman @relation(fields: [repairmanId], references: [id])
+  repairman Repairman @relation(fields: [repairmanId], references: [id], onDelete: Cascade)
 
   @@map("repairman_refresh_sessions")
 }

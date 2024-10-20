@@ -30,6 +30,10 @@ export class ServicesService {
   async findMany(ids: string[]) {
     ids.forEach((val) => this.findOne(val));
 
+    if (ids.length === 0) {
+      return [];
+    }
+
     return this.db.service.findMany({
       where: { id: { in: ids } },
     });
