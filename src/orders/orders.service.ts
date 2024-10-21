@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { BasketService } from 'src/basket/basket.service';
 import { DatabaseService } from 'src/database/database.service';
 import { RepairmanService } from 'src/repairman/repairman.service';
 import { ServicesService } from 'src/services/services.service';
@@ -19,6 +20,7 @@ export class OrdersService {
   constructor(
     private readonly db: DatabaseService,
     private readonly usersService: UsersService,
+    private readonly basketService: BasketService,
     private readonly repairmanService: RepairmanService,
     private readonly servicesService: ServicesService,
   ) {}
@@ -49,15 +51,13 @@ export class OrdersService {
       throw new NotFoundException('Address not found');
     }
 
-    const services = await this.servicesService.findMany(
-      createOrderDto.services,
-    );
+    const services = await this.basketService.getBasketByUserId(userId);
 
-    if (services.length !== createOrderDto.services.length) {
+    if (services.items.length !== createOrderDto.services.length) {
       throw new NotFoundException('Service not found');
     }
 
-    if (services.some((service) => !service.isAvailable)) {
+    if (services.items.some((service) => !service.isAvailable)) {
       throw new ConflictException('Service is not available');
     }
 
@@ -79,11 +79,14 @@ export class OrdersService {
     });
 
     await this.db.orderService.createMany({
-      data: services.map((service) => ({
+      data: services.items.map((service) => ({
         serviceId: service.id,
         orderId: order.id,
+        count: service.count,
       })),
     });
+
+    await this.basketService.clearBasket(userId);
 
     return order;
   }

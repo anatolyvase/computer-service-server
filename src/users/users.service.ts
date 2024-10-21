@@ -4,12 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from 'src/database/database.service';
+import { CreateAddressDto } from 'src/users/dto/create-address.dto';
 import { UpdateAccountPasswordDto } from 'src/users/dto/update-user-account.dto';
 import { UpdateUserProfileDto } from 'src/users/dto/update-user-profile.dto';
 import { CreateUserDto } from './dto/create-user.dto';
-import { Prisma } from '@prisma/client';
 
 type Include = Prisma.UserInclude;
 
@@ -123,6 +124,58 @@ export class UsersService {
         password: hashedPassword,
       },
       include: this.include,
+    });
+  }
+
+  async getAddressesByUserId(senderId: string) {
+    const user = await this.findOne(senderId);
+
+    const userAddresses = await this.db.userAddress.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        address: true,
+      },
+    });
+
+    return userAddresses.map((userAddress) => userAddress.address);
+  }
+
+  async addAddress(createAddressDto: CreateAddressDto, senderId: string) {
+    const user = await this.findOne(senderId);
+
+    const address = await this.db.address.create({
+      data: createAddressDto,
+    });
+
+    return this.db.userAddress.create({
+      data: {
+        userId: user.id,
+        addressId: address.id,
+      },
+    });
+  }
+
+  async removeAddress(addressId: string, senderId: string) {
+    const user = await this.findOne(senderId);
+    const userAddress = await this.db.userAddress.findUnique({
+      where: {
+        userId_addressId: {
+          userId: user.id,
+          addressId,
+        },
+      },
+    });
+
+    if (!userAddress) {
+      throw new NotFoundException('Address not found');
+    }
+
+    return this.db.address.delete({
+      where: {
+        id: addressId,
+      },
     });
   }
 

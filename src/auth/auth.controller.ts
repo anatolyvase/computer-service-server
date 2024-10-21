@@ -92,6 +92,7 @@ export class AuthController {
     return { access_token };
   }
 
+  @Public()
   @Get('refresh')
   async refresh(
     @Cookies('refresh_token') refreshToken: string,

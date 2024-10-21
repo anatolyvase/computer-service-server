@@ -6,12 +6,14 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { BasketService } from 'src/basket/basket.service';
+import { CreateAddressDto } from 'src/users/dto/create-address.dto';
 import { UpdateUserProfileDto } from 'src/users/dto/update-user-profile.dto';
 import { UsersService } from './users.service';
 import { Public } from '../auth/decorators/public.decorator';
@@ -34,6 +36,27 @@ export class UsersController {
   findMe(@CurrentUser() user: any) {
     console.log(user);
     return this.usersService.findOne(user.id);
+  }
+
+  @Get('me/addresses')
+  getAddresses(@CurrentUser() user: any) {
+    return this.usersService.getAddressesByUserId(user.id);
+  }
+
+  @Post('me/addresses')
+  addAddress(
+    @Body() createAddressDto: CreateAddressDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.usersService.addAddress(createAddressDto, user.id);
+  }
+
+  @Delete('me/addresses/:addressId')
+  removeAddress(
+    @Param('addressId') addressId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.usersService.removeAddress(addressId, user.id);
   }
 
   @Patch('me/profile')
