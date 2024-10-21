@@ -9,8 +9,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -75,8 +76,7 @@ model Address {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  users  UserAddress[]
-  orders Order[]
+  users UserAddress[]
 
   @@map("addresses")
 }
@@ -148,6 +148,7 @@ model BasketService {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@id([basketId, serviceId])
+  @@map("basket_services")
 }
 
 model OrderService {
@@ -175,10 +176,27 @@ model Order {
 
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   repairman Repairman?     @relation(fields: [repairmanId], references: [id], onDelete: Cascade)
-  address   Address        @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  address   OrderAddress?  @relation(fields: [addressId], references: [id], onDelete: Cascade)
   services  OrderService[]
 
   @@map("orders")
+}
+
+model OrderAddress {
+  id String @id @default(uuid()) @db.Uuid
+
+  address1 String @map("address_1")
+  address2 String @map("address_2")
+  city     String
+  state    String
+  zip      String
+  country  String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  orders    Order[]
+
+  @@map("order_addresses")
 }
 
 model UserRefreshSession {

@@ -64,8 +64,8 @@ export class OrdersService {
     const order = await this.db.order.create({
       data: {
         address: {
-          connect: {
-            id: address.id,
+          create: {
+            ...address,
           },
         },
         user: {
