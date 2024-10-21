@@ -1,4 +1,5 @@
 {
+  "buildCommand": "nest build"
   "version": 2,
   "builds": [
     {
