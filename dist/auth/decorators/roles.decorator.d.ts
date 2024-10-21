@@ -1,7 +1,0 @@
-export declare enum Role {
-    ADMIN = "ADMIN",
-    USER = "USER",
-    REPAIRMAN = "REPAIRMAN"
-}
-export declare const ROLES_KEY = "roles";
-export declare const Roles: (...roles: Role[]) => import("@nestjs/common").CustomDecorator<string>;
